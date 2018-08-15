@@ -6,6 +6,9 @@ Mean Square Terrors machine learning project for predicting Kaggle housing price
 2. GOTO 10
 
 ## Outline
+Although NYCDSA does not score our results on predictive power, Kaggle uses the following metric:
+
+_"Submissions are evaluated on Root-Mean-Squared-Error (RMSE) between the logarithm of the predicted value and the logarithm of the observed sales price. (Taking logs means that errors in predicting expensive houses and cheap houses will affect the result equally.)"_
 
 ### Explore Data (8/15)
 - Get familiar with what's present in the data
