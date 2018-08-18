@@ -106,3 +106,8 @@ venv.bak/
 # Text files
 *.csv
 *.txt
+
+#gz files
+*.gz
+
+.directory
