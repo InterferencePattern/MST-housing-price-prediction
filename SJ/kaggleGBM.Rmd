@@ -1,0 +1,94 @@
+---
+title: "Untitled"
+author: "Simon Joyce"
+date: "August 19, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Load libraries
+```{r}
+library(tidyverse)
+library(gbm)
+```
+### Load Data
+```{r}
+train = read_csv("train.csv")
+test = read_csv("test.csv")
+```
+## format data for gbm
+```{r}
+train$MSSubClass = as.factor(train$MSSubClass)
+train$MSZoning = as.factor(train$MSZoning)
+train$Street = factor(train$Street, levels = c("Grvl", "Pave"), ordered = TRUE)
+train$Alley = ifelse(is.na(train$Alley), "None", train$Alley)
+train$Alley = factor(train$Alley, levels = c("None","Grvl","Pave"), ordered = TRUE)
+train$LotShape = as.factor(train$LotShape) #order was not important based on discussion?
+train$LandContour = as.factor(train$LandContour)
+train$Utilities = factor(train$Utilities, levels = c("NoSeWa", "AllPub"), ordered = TRUE)
+train$LotConfig = as.factor(train$LotConfig)
+train$LandSlope = factor(train$LandSlope, levels = c("Gtl", "Mod", "Sev"), ordered = TRUE)
+train$Neighborhood = as.factor(train$Neighborhood)
+train$Condition1 = as.factor(train$Condition1)
+train$Condition2 = as.factor(train$Condition2)
+train$BldgType = as.factor(train$BldgType)
+train$HouseStyle = as.factor(train$HouseStyle)
+train$RoofStyle = as.factor(train$RoofStyle)
+train$RoofMatl = as.factor(train$RoofMatl)
+train$Exterior1st = as.factor(train$Exterior1st)
+train$Exterior2nd = as.factor(train$Exterior2nd)
+train$MasVnrType = as.factor(train$MasVnrType)
+train$ExterQual = factor(train$ExterQual , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$ExterCond = factor(train$ExterCond , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$Foundation = as.factor(train$Foundation)
+train$BsmtQual = ifelse(is.na(train$BsmtQual), "None", train$BsmtQual)
+train$BsmtQual = factor(train$BsmtQual , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$BsmtCond = ifelse(is.na(train$BsmtCond), "None", train$BsmtCond)
+train$BsmtCond = factor(train$BsmtCond , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$BsmtExposure= ifelse(is.na(train$BsmtExposure), "None", train$BsmtExposure)
+train$BsmtExposure = factor(train$BsmtExposure , levels = c("None", "No", "Mn",   "Av", "Gd"), ordered = TRUE)
+train$BsmtFinType1 = ifelse(is.na(train$BsmtFinType1), "None", train$BsmtFinType1)
+train$BsmtFinType1 = factor(train$BsmtFinType1 , levels = c("None", "Unf", "LwQ", "Rec", "BLQ", "ALQ", "GLQ"), ordered = TRUE)
+train$BsmtFinType2 = ifelse(is.na(train$BsmtFinType2), "None", train$BsmtFinType2)
+train$BsmtFinType2 = factor(train$BsmtFinType2 , levels = c("None", "Unf", "LwQ", "Rec", "BLQ", "ALQ", "GLQ"), ordered = TRUE)
+train$Heating = as.factor(train$Heating)
+train$HeatingQC = factor(train$HeatingQC , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$CentralAir = as.factor(train$CentralAir)
+train$Electrical = as.factor(train$Electrical)
+train$KitchenQual = factor(train$KitchenQual , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$Functional = factor(train$Functional , levels = c("Sev", "Maj2", "Maj1", "Mod", "Min2", "Min1", "Typ"), ordered = TRUE)
+train$FireplaceQu = ifelse(is.na(train$FireplaceQu), "None", train$FireplaceQu)
+train$FireplaceQu = factor(train$FireplaceQu , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$GarageType = as.factor(train$GarageType)
+train$GarageFinish = ifelse(is.na(train$GarageFinish), "None", train$GarageFinish)
+train$GarageFinish = factor(train$GarageFinish , levels = c("None", "Unf", "RFn", "Fin"), ordered = TRUE)
+train$GarageQual = ifelse(is.na(train$GarageQual), "None", train$GarageQual)
+train$GarageQual = factor(train$GarageQual , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$GarageCond = ifelse(is.na(train$GarageCond), "None", train$GarageCond)
+train$GarageCond = factor(train$GarageCond , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$PavedDrive = factor(train$PavedDrive , levels = c("N", "P", "Y"), ordered = TRUE)
+train$PoolQC = ifelse(is.na(train$PoolQC), "None", train$PoolQC)
+train$PoolQC = factor(train$PoolQC , levels = c("None", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$Fence = ifelse(is.na(train$Fence), "None", train$Fence)
+train$Fence = factor(train$Fence , levels = c("None", "MnWw", "GdWo", "MnPrv", "GdPrv"), ordered = TRUE)
+train$MiscFeature = as.factor(train$MiscFeature)
+train$MoSold = as.factor(train$MoSold)
+train$SaleType = as.factor(train$SaleType)
+train$SaleCondition = as.factor(train$SaleCondition)
+train$SalePrice = log(train$SalePrice)
+```
+
+
+```{r}
+set.seed(0)
+boostTrain = gbm(SalePrice ~ . -Id,
+                 data = train,
+                 n.trees = 10000,
+                 shrinkage = 0.001)
+```
+```{r}
+relative.influence(boostTrain, sort. = T)
+```
+
