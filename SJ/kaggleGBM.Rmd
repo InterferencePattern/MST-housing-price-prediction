@@ -20,6 +20,9 @@ test = read_csv("test.csv")
 ```
 ## format data for gbm
 ```{r}
+names(train) = gsub("1st", "First", names(train))
+names(train) = gsub("2nd", "Second", names(train))
+names(train) = gsub("3Ssn", "ThreeSsn", names(train))
 train$MSSubClass = as.factor(train$MSSubClass)
 train$MSZoning = as.factor(train$MSZoning)
 train$Street = factor(train$Street, levels = c("Grvl", "Pave"), ordered = TRUE)
@@ -61,7 +64,9 @@ train$KitchenQual = factor(train$KitchenQual , levels = c("Po", "Fa", "TA", "Gd"
 train$Functional = factor(train$Functional , levels = c("Sev", "Maj2", "Maj1", "Mod", "Min2", "Min1", "Typ"), ordered = TRUE)
 train$FireplaceQu = ifelse(is.na(train$FireplaceQu), "None", train$FireplaceQu)
 train$FireplaceQu = factor(train$FireplaceQu , levels = c("None", "Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
+train$GarageType = ifelse(is.na(train$GarageType), "None", train$GarageType)
 train$GarageType = as.factor(train$GarageType)
+train$GarageYrBlt = ifelse(is.na(train$GarageYrBlt), 0, train$GarageYrBlt)
 train$GarageFinish = ifelse(is.na(train$GarageFinish), "None", train$GarageFinish)
 train$GarageFinish = factor(train$GarageFinish , levels = c("None", "Unf", "RFn", "Fin"), ordered = TRUE)
 train$GarageQual = ifelse(is.na(train$GarageQual), "None", train$GarageQual)
@@ -90,5 +95,22 @@ boostTrain = gbm(SalePrice ~ . -Id,
 ```
 ```{r}
 relative.influence(boostTrain, sort. = T)
+```
+### Random Forest
+```{r}
+library(randomForest)
+
+set.seed(0)
+forestTrain = randomForest(data = train,
+                           SalePrice ~ . - Id - MiscFeature - LotFrontage ,
+                           importance = T,
+                           na.action=na.omit)
+varImpPlot(forestTrain)
+```
+
+```{r}
+imp = importance(forestTrain, type = 1) %>%  
+  abs() 
+cbind(rownames(imp)[order(imp, decreasing = T)], sort(imp, decreasing = T))
 ```
 
