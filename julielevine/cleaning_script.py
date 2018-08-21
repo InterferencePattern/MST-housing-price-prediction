@@ -21,4 +21,4 @@ houses.LotFrontage.fillna(0, inplace=True)
 # Drop useless columns: ID
 # houses.drop(["Id"], axis = 1, inplace=True)
 
-houses.to_csv(sys.argv[2])
+houses.to_csv(sys.argv[2], index = False)
