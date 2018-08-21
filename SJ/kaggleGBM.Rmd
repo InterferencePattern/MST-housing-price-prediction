@@ -40,8 +40,8 @@ train$BldgType = as.factor(train$BldgType)
 train$HouseStyle = as.factor(train$HouseStyle)
 train$RoofStyle = as.factor(train$RoofStyle)
 train$RoofMatl = as.factor(train$RoofMatl)
-train$Exterior1st = as.factor(train$Exterior1st)
-train$Exterior2nd = as.factor(train$Exterior2nd)
+train$ExteriorFirst = as.factor(train$ExteriorFirst)
+train$ExteriorSecond = as.factor(train$ExteriorSecond)
 train$MasVnrType = as.factor(train$MasVnrType)
 train$ExterQual = factor(train$ExterQual , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
 train$ExterCond = factor(train$ExterCond , levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE)
@@ -113,4 +113,135 @@ imp = importance(forestTrain, type = 1) %>%
   abs() 
 cbind(rownames(imp)[order(imp, decreasing = T)], sort(imp, decreasing = T))
 ```
+### EDA for spreadsheet
+```{r}
+train %>% 
+  select(GarageCars, SalePrice) %>% 
+  ggplot(aes(x = as.factor(GarageCars), y = SalePrice)) +
+  geom_boxplot()
+```
+```{r}
+sum(train$GarageCars == 4)
+sum(train$GarageCars == 0)
+```
+```{r}
+train %>% 
+  select(GarageArea, SalePrice) %>% 
+  filter(GarageArea > 0) %>% 
+  ggplot(aes(x = GarageArea, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+```
+```{r}
+train %>% 
+  select(GarageQual, SalePrice) %>% 
+  ggplot(aes(x = GarageQual, y = SalePrice)) +
+  geom_boxplot()
+```
 
+```{r}
+train %>% 
+  select(GarageCond, SalePrice) %>% 
+  ggplot(aes(x = GarageCond, y = SalePrice)) +
+  geom_boxplot()
+```
+```{r}
+train %>% 
+  select(PavedDrive, SalePrice) %>% 
+  ggplot(aes(x = PavedDrive, y = SalePrice)) +
+  geom_boxplot()
+```
+```{r}
+hist(train$WoodDeckSF)
+```
+
+```{r}
+train %>% 
+  select(WoodDeckSF, SalePrice) %>%
+  filter(WoodDeckSF > 0) %>% 
+  ggplot(aes(x = WoodDeckSF, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+```
+```{r}
+hist(train$OpenPorchSF)
+sum(train$OpenPorchSF == 0)
+```
+```{r}
+train %>% 
+  select(OpenPorchSF, SalePrice) %>%
+  filter(OpenPorchSF > 0) %>% 
+  ggplot(aes(x = OpenPorchSF, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+```
+```{r}
+hist(train$EnclosedPorch)
+sum(train$EnclosedPorch == 0)
+```
+```{r}
+hist(train$ThreeSsnPorch)
+sum(train$ThreeSsnPorch == 0)
+```
+```{r}
+hist(train$ScreenPorch)
+sum(train$ScreenPorch == 0)
+```
+```{r}
+hist(train$PoolArea)
+sum(train$PoolArea == 0)
+```
+```{r}
+train %>% 
+  select(Fence, SalePrice) %>% 
+  ggplot(aes(x = Fence, y = SalePrice)) +
+  geom_boxplot()
+summary(train$Fence)
+```
+```{r}
+summary(train$MiscFeature)
+```
+```{r}
+train %>% 
+  select(MoSold, SalePrice) %>% 
+  ggplot(aes(x = MoSold, y = SalePrice)) +
+  geom_boxplot()
+summary(train$MoSold)
+```
+```{r}
+train %>% 
+  select(YrSold, SalePrice) %>% 
+  ggplot(aes(x = as.factor(YrSold), y = SalePrice)) +
+  geom_boxplot()
+summary(as.factor(train$YrSold))
+```
+```{r}
+train %>% 
+  select(SaleType, SalePrice) %>% 
+  ggplot(aes(x = SaleType, y = SalePrice)) +
+  geom_boxplot()
+summary(train$SaleType)
+```
+```{r}
+train %>% 
+  select(SaleCondition, SalePrice) %>% 
+  ggplot(aes(x = SaleCondition, y = SalePrice)) +
+  geom_boxplot()
+summary(train$SaleCondition)
+```
+
+
+```{r}
+train %>% 
+  select(, SalePrice) %>%
+  ggplot(aes(x = , y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+```
+
+```{r}
+train %>% 
+  select(, SalePrice) %>% 
+  ggplot(aes(x = , y = SalePrice)) +
+  geom_boxplot()
+```
