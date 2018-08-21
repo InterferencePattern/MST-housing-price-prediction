@@ -229,19 +229,3 @@ train %>%
   geom_boxplot()
 summary(train$SaleCondition)
 ```
-
-
-```{r}
-train %>% 
-  select(, SalePrice) %>%
-  ggplot(aes(x = , y = SalePrice)) +
-  geom_point() +
-  geom_smooth()
-```
-
-```{r}
-train %>% 
-  select(, SalePrice) %>% 
-  ggplot(aes(x = , y = SalePrice)) +
-  geom_boxplot()
-```
