@@ -7,11 +7,17 @@ def transform(train_path, test_path):
 
     # Load data as dataframes
     train = pd.read_csv(train_path, index_col = 0)
-    train.drop("SalePrice", axis=1, inplace=True)
-
     test = pd.read_csv(test_path, index_col = 0)
 
+    # Drop SalePrice from training set
+    train.drop("SalePrice", axis=1, inplace=True)
+
     # Concat training and test dataframes
+    df = pd.concat([train, test], sort=False)
+
+    df = df.set_index('Id')
+
+    # Rename columns that are incompatible with Pandas (periods, etc)
 
     # Drop all unused columns Here
 
