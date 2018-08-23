@@ -9,12 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ### Load libraries
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
-library(gbm)
+#library(car)
+library(caret)
+#library(gbm)
 ```
 ### Load Data
-```{r}
+```{r, include=FALSE}
 train = read_csv("train.csv")
 test = read_csv("test.csv")
 ```
@@ -85,7 +87,7 @@ train$SaleCondition = as.factor(train$SaleCondition)
 train$SalePrice = log(train$SalePrice)
 ```
 
-
+### GBM
 ```{r}
 set.seed(0)
 boostTrain = gbm(SalePrice ~ . -Id,
@@ -114,16 +116,16 @@ imp = importance(forestTrain, type = 1) %>%
 cbind(rownames(imp)[order(imp, decreasing = T)], sort(imp, decreasing = T))
 ```
 ### EDA for spreadsheet
+GarageCars
 ```{r}
 train %>% 
   select(GarageCars, SalePrice) %>% 
   ggplot(aes(x = as.factor(GarageCars), y = SalePrice)) +
   geom_boxplot()
-```
-```{r}
 sum(train$GarageCars == 4)
 sum(train$GarageCars == 0)
 ```
+GarageArea
 ```{r}
 train %>% 
   select(GarageArea, SalePrice) %>% 
@@ -132,82 +134,123 @@ train %>%
   geom_point() +
   geom_smooth()
 ```
+GarageQual
 ```{r}
 train %>% 
   select(GarageQual, SalePrice) %>% 
   ggplot(aes(x = GarageQual, y = SalePrice)) +
   geom_boxplot()
 ```
-
+GarageCond
 ```{r}
 train %>% 
   select(GarageCond, SalePrice) %>% 
   ggplot(aes(x = GarageCond, y = SalePrice)) +
   geom_boxplot()
 ```
+PavedDrive
 ```{r}
 train %>% 
   select(PavedDrive, SalePrice) %>% 
   ggplot(aes(x = PavedDrive, y = SalePrice)) +
   geom_boxplot()
 ```
+WoodDeckSf
 ```{r}
-hist(train$WoodDeckSF)
-```
-
-```{r}
+hist(train$WoodDeckSF[train$WoodDeckSF > 0])
 train %>% 
   select(WoodDeckSF, SalePrice) %>%
   filter(WoodDeckSF > 0) %>% 
   ggplot(aes(x = WoodDeckSF, y = SalePrice)) +
   geom_point() +
   geom_smooth()
+t.test(train$SalePrice[train$WoodDeckSF > 0], train$SalePrice[train$WoodDeckSF == 0])
 ```
+OpenPorchSF
 ```{r}
 hist(train$OpenPorchSF)
 sum(train$OpenPorchSF == 0)
-```
-```{r}
 train %>% 
-  select(OpenPorchSF, SalePrice) %>%
-  filter(OpenPorchSF > 0) %>% 
+  transmute(OpenPorchSF = (OpenPorchSF) ** (1/2), SalePrice = SalePrice) %>%
+  #filter(between(OpenPorchSF, 1, 400)) %>% 
   ggplot(aes(x = OpenPorchSF, y = SalePrice)) +
   geom_point() +
   geom_smooth()
 ```
+EnclosedPorch
 ```{r}
 hist(train$EnclosedPorch)
-sum(train$EnclosedPorch == 0)
+summary(as.factor(ifelse(train$EnclosedPorch > 0, "Yes", "No")))
+train %>% 
+  transmute(EnclosedPorch = ifelse(EnclosedPorch > 0, "Yes", "No"),
+            SalePrice = SalePrice) %>% 
+  ggplot(aes(x = EnclosedPorch, y = SalePrice)) +
+  geom_boxplot()
+train %>% 
+  select(EnclosedPorch, SalePrice) %>% 
+  ggplot(aes(x = EnclosedPorch, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+train %>% 
+  select(EnclosedPorch, SalePrice) %>% 
+  filter(EnclosedPorch > 0) %>% 
+  ggplot(aes(x = EnclosedPorch, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
+t.test(train$SalePrice[train$EnclosedPorch > 0], train$SalePrice[train$EnclosedPorch == 0])
 ```
+ThreeSsnPorch
 ```{r}
 hist(train$ThreeSsnPorch)
 sum(train$ThreeSsnPorch == 0)
 ```
+ScreenPorch
 ```{r}
 hist(train$ScreenPorch)
 sum(train$ScreenPorch == 0)
+t.test(train$SalePrice[train$ScreenPorch > 0], train$SalePrice[train$ScreenPorch == 0])
+train %>% 
+  transmute(ScreenPorch = ifelse(ScreenPorch > 0, "Yes", "No"),
+            SalePrice = SalePrice) %>% 
+  ggplot(aes(x = ScreenPorch, y = SalePrice)) +
+  geom_boxplot()
+train %>% 
+  select(ScreenPorch, SalePrice) %>% 
+#  filter(ScreenPorch > 0) %>% 
+  ggplot(aes(x = ScreenPorch, y = SalePrice)) +
+  geom_point() +
+  geom_smooth()
 ```
+PoolArea
 ```{r}
 hist(train$PoolArea)
 sum(train$PoolArea == 0)
 ```
+Fence
 ```{r}
 train %>% 
   select(Fence, SalePrice) %>% 
   ggplot(aes(x = Fence, y = SalePrice)) +
   geom_boxplot()
 summary(train$Fence)
+aov(SalePrice ~ Fence, train) %>% 
+  summary()
 ```
+MiscFeature
 ```{r}
 summary(train$MiscFeature)
 ```
+MoSold
 ```{r}
 train %>% 
   select(MoSold, SalePrice) %>% 
   ggplot(aes(x = MoSold, y = SalePrice)) +
   geom_boxplot()
 summary(train$MoSold)
+summary(aov(SalePrice ~ MoSold, train))
+oneway.test(SalePrice ~ MoSold, train, var.equal = FALSE)
 ```
+YrSold
 ```{r}
 train %>% 
   select(YrSold, SalePrice) %>% 
@@ -215,6 +258,7 @@ train %>%
   geom_boxplot()
 summary(as.factor(train$YrSold))
 ```
+SaleType
 ```{r}
 train %>% 
   select(SaleType, SalePrice) %>% 
@@ -222,10 +266,160 @@ train %>%
   geom_boxplot()
 summary(train$SaleType)
 ```
+SaleCondition
 ```{r}
 train %>% 
   select(SaleCondition, SalePrice) %>% 
   ggplot(aes(x = SaleCondition, y = SalePrice)) +
   geom_boxplot()
 summary(train$SaleCondition)
+summary(aov(SalePrice ~ SaleCondition, train))
+```
+### Porch Feature
+```{r}
+train %>% 
+  transmute(OpenPorchSF = ifelse(OpenPorchSF == 0,
+                                 NA,
+                                 OpenPorchSF),
+            EnclosedPorch = ifelse(EnclosedPorch == 0,
+                                 NA,
+                                 EnclosedPorch),
+            ThreeSsnPorch= ifelse(ThreeSsnPorch == 0,
+                                 NA,
+                                 ThreeSsnPorch),
+            ScreenPorch = ifelse(ScreenPorch == 0,
+                                 NA,
+                                 ScreenPorch),
+            SalePrice = SalePrice) %>% 
+    ggplot(aes(y = SalePrice)) +
+  geom_point(aes(x = OpenPorchSF), col = "red") +
+  geom_point(aes(x = EnclosedPorch), col = "green") +
+  geom_point(aes(x = ScreenPorch), col = "blue") +
+  geom_point(aes(x = ThreeSsnPorch))
+totalPorches = train %>% 
+  transmute(porches = ifelse(OpenPorchSF > 0, 1, 0) +
+              ifelse(EnclosedPorch > 0, 1, 0) +
+              ifelse(ThreeSsnPorch > 0, 1, 0) +
+              ifelse(ScreenPorch > 0, 1, 0))
+(totalPorches$porches > 1) %>% sum()
+(totalPorches$porches == 0) %>% sum()
+(totalPorches$porches > 2) %>% sum()
+train %>% transmute(
+  porchSF = OpenPorchSF + EnclosedPorch + ThreeSsnPorch + ScreenPorch,
+  SalePrice = SalePrice
+) %>% 
+  ggplot(aes(x = porchSF, y = SalePrice)) + 
+  geom_point() +
+  geom_smooth()
+train[totalPorches$porches > 1, ] %>% View()
+```
+
+LotAreaOutliers = c(250, 314, 336)
+outliers0 = c(524, 1062, 1299)
+
+```{r}
+trainClean = train %>%
+  transmute(
+    MSSubClass = as.factor(MSSubClass),
+    MSZoning = as.factor(MSZoning),
+    LotFrontage = LotFrontage,
+    LotArea = LotArea,
+    LotShape = if_else(LotShape == "Reg", "Reg", "IR") %>%
+      as.factor(),
+    LandContour = as.factor(LandContour),
+    LotConfig = if_else(LotConfig == "FR3", "FR2", LotConfig) %>%
+      as.factor(),
+    Neighborhood = as.factor(Neighborhood),
+    Condition1 = as.factor(Condition1),
+    BldgType = as.factor(BldgType),
+    HouseStyle = as.factor(HouseStyle),
+    OverallQual = OverallQual,
+    OverallCond = ifelse(OverallCond > 5, 5, OverallCond),
+    YearBuilt = YearBuilt,
+    YearBuilt2 = YearBuilt ** 2,
+    RoofStyle = as.factor(RoofStyle),
+    Exterior_1st = if_else(Exterior1st < 20, "other", Exterior1st) %>%
+      as.factor(),
+    Exterior_2nd = Exterior1st != Exterior2nd %>%
+      as.factor(),
+    MasVnrType = as.factor(MasVnrType),
+    MasVnrArea = MasVnrArea,
+    ExterQual = factor(ExterQual,
+                       levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                       ordered = TRUE),
+    ExterCond = factor(ExterCond,
+                       levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                       ordered = TRUE),
+    Foundation = as.factor(train$Foundation),
+    BsmtQual = if_else(is.na(BsmtQual), "nan", BsmtQual) %>%
+      factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+             ordered = TRUE),
+    BsmtCond = if_else(is.na(BsmtCond), "nan", BsmtCond) %>%
+      factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+             ordered = TRUE),
+    BsmtExposure= if_else(is.na(BsmtExposure), "nan", BsmtExposure) %>%
+      factor(levels = c("nan", "No", "Mn", "Av", "Gd"), ordered = TRUE),
+    BsmtFinType1 = if_else(is.na(BsmtFinType1), "nan", BsmtFinType1) %>%
+      factor(levels = c("nan", "Unf", "LwQ", "Rec", "BLQ", "ALQ", "GLQ"),
+             ordered = TRUE),
+   BsmtFinSF_1 = BsmtFinSF1,
+   BsmtUnfSF = BsmtUnfSF,
+   TotalBsmtSF = TotalBsmtSF,
+   HeatingQC = factor(HeatingQC, levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                      ordered = TRUE),
+   CentralAir = as.factor(CentralAir),
+   Electrical = if_else(Electrical == "SBrkr", "SBrkr", "other") %>%
+     as.factor(),
+   FlrSF = `1stFlrSF` + `2ndFlrSF`,
+   Floors = if_else(`2ndFlrSF` > 0, 2, 1),
+   GrLivArea = GrLivArea,
+   BsmtFullBath = if_else(BsmtFullBath > 0, "Y", "N") %>%
+     as.factor(),
+   FullBath = ifelse(FullBath < 2, 1, FullBath),
+   HalfBath = if_else(HalfBath == 0, "N", "Y") %>%
+     as.factor(),
+   BedroomAbvGr = if_else(
+     BedroomAbvGr < 2, 1,
+     ifelse(BedroomAbvGr > 4, 5,
+             BedroomAbvGr)) %>%
+     as.factor(),
+   KitchenAbvGr = ifelse(KitchenAbvGr < 2, 1, 2),
+   KitchenQual = factor(KitchenQual,
+                        levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                        ordered = TRUE),
+   TotRmsAbvGrd = TotRmsAbvGrd,
+   Functional = if_else(Functional == "Typ", "Y", "N"),
+   Fireplaces = ifelse(Fireplaces > 1, 2, Fireplaces),
+   FireplaceQu = if_else(is.na(FireplaceQu), "nan", FireplaceQu) %>%
+     factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+            ordered = TRUE),
+   GarageType = if_else(is.na(GarageType), "None", GarageType) %>%
+     as.factor(),
+   GarageYrBlt = if_else(is.na(GarageYrBlt), YearBuilt, GarageYrBlt),
+   GarageFinish = if_else(is.na(GarageFinish), "None", GarageFinish) %>%
+     factor(levels = c("None", "Unf", "RFn", "Fin"), ordered = TRUE),
+   GarageCars = ifelse(GarageCars > 2, 3, GarageCars),
+   GarageArea = GarageArea,
+   PavedDrive = factor(PavedDrive,
+                       levels = c("N", "P", "Y"),
+                       ordered = TRUE),
+   WoodDeckSF = WoodDeckSF,
+   OpenPorchSF = OpenPorchSF,
+   EnclosedPorch = EnclosedPorch,
+   ThreeSsnPorch = `3SsnPorch`,
+   ScreenPorch = ScreenPorch,
+   Pool = if_else(PoolArea > 0, "Y", "N") %>%
+     as.factor(),
+   Fence = if_else(is.na(Fence), "None", Fence) %>%
+     factor(levels = c("MnWw", "GdWo", "MnPrv", "GdPrv", "None"),
+            ordered = TRUE),
+   MoSold = as.factor(MoSold),
+   SaleType = if_else(SaleType == "New", "New", "other") %>%
+     as.factor(),
+   SaleCondition = if_else(
+     SaleCondition == "Abnorml", "Abnorml",
+     if_else(SaleCondition == "Partial", "Partial",
+             "Normal")),
+   SalePrice = log(SalePrice)
+  )
 ```
