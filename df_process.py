@@ -3,7 +3,7 @@ import pandas as pd
 import re
 from scipy.special import boxcox1p
 
-def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_path='p_test.csv'):
+def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_path='p_test.csv', price_opt_path='prices.csv'):
     """
     Takes train and test dataset paths as arguments (./train.csv),
     performs transformations on the features, saves the processed
@@ -109,16 +109,16 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     df.OverallQual = boxcox1p(df.OverallQual, best_lambda)
 
     # BsmtFinSF1 : Lots of 0s
-    # best_lambda = .168
-    # df.BsmtFinSF1 = boxcox1p(df.BsmtFinSF1, lam)
+    best_lambda = .168
+    df.BsmtFinSF1 = boxcox1p(df.BsmtFinSF1, lam)
 
     # BsmtUnfSF : Many 0s, MIGHT BE BETTER TO NOT TRANSFORM
-    # best_lambda = .208
-    # df.BsmtUnfSF = boxcox1p(df.BsmtUnfSF, best_lambda)
+    best_lambda = .208
+    df.BsmtUnfSF = boxcox1p(df.BsmtUnfSF, best_lambda)
 
     # TotalBsmtSF : Many 0s, TRANSFORMATION QUESTIONABLE
-    # best_lambda = .595
-    # df.TotalBsmtSF = boxcox1p(df.TotalBsmtSF, best_lambda)
+    best_lambda = .595
+    df.TotalBsmtSF = boxcox1p(df.TotalBsmtSF, best_lambda)
 
     # TotRmsAbvGrd : Small football effect
     best_lambda = -.138
@@ -135,8 +135,8 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     df.LotConfig = df.LotConfig.apply(lambda x: 'FR2' if x == 'FR3' else x)
 
     # Condition1 : Combine railroad-adjacent categories to one RR category
-    # railroad = ['RRAn', 'RRAe', 'RRNn', 'RRNe']
-    # df.Condition1 = df.Condition1.apply(lambda x: 'RR' if x in railroad else x)
+    railroad = ['RRAn', 'RRAe', 'RRNn', 'RRNe']
+    df.Condition1 = df.Condition1.apply(lambda x: 'NearRR' if x in railroad else x)
 
     # OverallCond : Reassign all values greater than 5 to 5
     df.OverallCond = df.OverallCond.apply(lambda x: 5 if x > 5 else x)
@@ -225,8 +225,9 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     # ExterQual : Convert to ordinal values {Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4}
     df.ExterQual = df.ExterQual.replace({'Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4})
 
-    # ExterCond : Convert to ordinal values {'Po': 1, 'Fa': 2, 'TA': 3, 'Gd': 4, 'Ex': 5}
-    df.ExterCond = df.ExterCond.replace({'Po': 1, 'Fa': 2, 'TA': 3, 'Gd': 4, 'Ex': 5})
+    # ExterCond : Convert to ordinal values {'Po': 1, 'Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4}
+    # Very few 'Po's, merge with 'Fa'
+    df.ExterCond = df.ExterCond.replace({'Po': 1, 'Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4})
 
     # BsmtQual : Convert to ordinal values {'None': 0, 'Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4}
     df.BsmtQual = df.BsmtQual.replace({'None': 0, 'Fa': 1, 'TA': 2, 'Gd': 3, 'Ex': 4})
@@ -272,9 +273,7 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     final_train = df.iloc[0:len(train),:]
     final_test = df.iloc[len(train):,:]
 
-    # Add SalePrice column back to train dataframe
-    final_train = pd.concat([final_train, saleprice], axis = 1)
-
     # Save dataframes to csv with file names 'train_opt_path' and 'test_opt_path'
     final_train.to_csv(train_opt_path)
     final_test.to_csv(test_opt_path)
+    saleprice.to_csv(price_opt_path)
