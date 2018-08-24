@@ -22,3 +22,18 @@ boxplot(y~df[,17]); print(sum(is.na(df[,17]))/length(df[,17]))# OverallQual
 boxplot(y~df[,18]); print(sum(is.na(df[,18]))/length(df[,18]))# OverallCond
 plot(y~df[,19]); print(sum(is.na(df[,19]))/length(df[,19]))# YearBuilt
 plot(y~df[,20]); print(sum(is.na(df[,20]))/length(df[,20]))# YearRemodAdd
+
+
+# BoxCox stuff
+library(forecast)
+
+lambda = BoxCox.lambda(df$ExterQual)
+trans.vector = BoxCox(df$ExterQual, lambda)
+
+model = lm(y~df$ExterQual)
+plot(y~df$ExterQual)
+abline(model)
+
+model = lm(y~trans.vector)
+plot(y~trans.vector)
+abline(model)
