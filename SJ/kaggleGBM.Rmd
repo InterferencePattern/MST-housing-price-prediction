@@ -94,8 +94,6 @@ boostTrain = gbm(SalePrice ~ . -Id,
                  data = train,
                  n.trees = 10000,
                  shrinkage = 0.001)
-```
-```{r}
 relative.influence(boostTrain, sort. = T)
 ```
 ### Random Forest
@@ -108,9 +106,6 @@ forestTrain = randomForest(data = train,
                            importance = T,
                            na.action=na.omit)
 varImpPlot(forestTrain)
-```
-
-```{r}
 imp = importance(forestTrain, type = 1) %>%  
   abs() 
 cbind(rownames(imp)[order(imp, decreasing = T)], sort(imp, decreasing = T))
@@ -277,7 +272,7 @@ summary(aov(SalePrice ~ SaleCondition, train))
 ```
 ### Porch Feature
 ```{r}
-train %>% 
+trainClean %>% 
   transmute(OpenPorchSF = ifelse(OpenPorchSF == 0,
                                  NA,
                                  OpenPorchSF),
@@ -296,7 +291,7 @@ train %>%
   geom_point(aes(x = EnclosedPorch), col = "green") +
   geom_point(aes(x = ScreenPorch), col = "blue") +
   geom_point(aes(x = ThreeSsnPorch))
-totalPorches = train %>% 
+totalPorches = trainClean %>% 
   transmute(porches = ifelse(OpenPorchSF > 0, 1, 0) +
               ifelse(EnclosedPorch > 0, 1, 0) +
               ifelse(ThreeSsnPorch > 0, 1, 0) +
@@ -304,14 +299,38 @@ totalPorches = train %>%
 (totalPorches$porches > 1) %>% sum()
 (totalPorches$porches == 0) %>% sum()
 (totalPorches$porches > 2) %>% sum()
-train %>% transmute(
+trainClean %>% transmute(
   porchSF = OpenPorchSF + EnclosedPorch + ThreeSsnPorch + ScreenPorch,
   SalePrice = SalePrice
 ) %>% 
   ggplot(aes(x = porchSF, y = SalePrice)) + 
   geom_point() +
   geom_smooth()
-train[totalPorches$porches > 1, ] %>% View()
+trainClean[totalPorches$porches > 1, ] %>%
+  select(OpenPorchSF, EnclosedPorch, ThreeSsnPorch, ScreenPorch) %>% 
+  View()
+trainPorch = trainClean %>%
+  mutate(porch =
+           if_else(totalPorches > 1, "Multi",
+                   if_else(OpenPorchSF > 0, "Open",
+                           if_else(EnclosedPorch > 0, "Enclosed",
+                                   if_else(ThreeSsnPorch > 0, "ThreeSsn",
+                                           if_else(ScreenPorch > 0, "Screen",
+                                                   "None"))))) %>% 
+  factor(levels = c("None", "Enclosed", "ThreeSsn", "Screen", "Open", "Multi"),
+         ordered = TRUE))
+ 
+ggplot(trainPorch, aes(x = porch, y = SalePrice)) +
+  geom_boxplot()
+
+oneway.test(data = trainPorch, SalePrice ~ porch)
+
+trainClean %>% 
+  mutate(
+    porch = ifelse(OpenPorchSF + EnclosedPorch + ThreeSsnPorch + ScreenPorch > 0, "Yes", "No") %>% as.factor()
+  ) %>% 
+  ggplot(aes(x = porch, y = SalePrice)) +
+  geom_boxplot()
 ```
 
 LotAreaOutliers = c(250, 314, 336)
@@ -340,10 +359,11 @@ trainClean = train %>%
     RoofStyle = as.factor(RoofStyle),
     Exterior_1st = if_else(Exterior1st < 20, "other", Exterior1st) %>%
       as.factor(),
-    Exterior_2nd = Exterior1st != Exterior2nd %>%
+    Exterior_2nd = if_else(Exterior1st != Exterior2nd, "Y", "N") %>%
       as.factor(),
-    MasVnrType = as.factor(MasVnrType),
-    MasVnrArea = MasVnrArea,
+    MasVnrType = if_else(is.na(MasVnrType), "None", MasVnrType) %>%
+      as.factor(),
+    MasVnrArea = ifelse(is.na(MasVnrArea), 0, MasVnrArea),
     ExterQual = factor(ExterQual,
                        levels = c("Po", "Fa", "TA", "Gd", "Ex"),
                        ordered = TRUE),
@@ -368,7 +388,9 @@ trainClean = train %>%
    HeatingQC = factor(HeatingQC, levels = c("Po", "Fa", "TA", "Gd", "Ex"),
                       ordered = TRUE),
    CentralAir = as.factor(CentralAir),
-   Electrical = if_else(Electrical == "SBrkr", "SBrkr", "other") %>%
+   Electrical = if_else(Electrical == "SBrkr", "SBrkr",
+                        "other",
+                        missing = "other") %>%
      as.factor(),
    FlrSF = `1stFlrSF` + `2ndFlrSF`,
    Floors = if_else(`2ndFlrSF` > 0, 2, 1),
@@ -388,7 +410,8 @@ trainClean = train %>%
                         levels = c("Po", "Fa", "TA", "Gd", "Ex"),
                         ordered = TRUE),
    TotRmsAbvGrd = TotRmsAbvGrd,
-   Functional = if_else(Functional == "Typ", "Y", "N"),
+   Functional = if_else(Functional == "Typ", "Y", "N") %>% 
+     as.factor(),
    Fireplaces = ifelse(Fireplaces > 1, 2, Fireplaces),
    FireplaceQu = if_else(is.na(FireplaceQu), "nan", FireplaceQu) %>%
      factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
@@ -419,7 +442,71 @@ trainClean = train %>%
    SaleCondition = if_else(
      SaleCondition == "Abnorml", "Abnorml",
      if_else(SaleCondition == "Partial", "Partial",
-             "Normal")),
+             "Normal")) %>% 
+     as.factor(),
    SalePrice = log(SalePrice)
   )
 ```
+### GBM
+```{r}
+set.seed(0)
+boostTrain = gbm(SalePrice ~ .,
+                 data = trainClean,
+                 n.trees = 10000,
+                 shrinkage = 0.001)
+relative.influence(boostTrain, sort. = T)
+```
+### Random Forest
+```{r}
+library(randomForest)
+
+set.seed(0)
+forestTrain = randomForest(data = trainClean,
+                           SalePrice ~ . - LotFrontage ,
+                           importance = T,
+                           na.action=na.omit)
+varImpPlot(forestTrain)
+imp = importance(forestTrain, type = 1) %>%  
+  abs() 
+cbind(rownames(imp)[order(imp, decreasing = T)], sort(imp, decreasing = T))
+```
+### Lasso
+```{r}
+lambdaGrid = 10^seq(0, -4, length = 100)
+alphaGrid = seq(0, 1, 100)
+set.seed(0)
+trainControl = trainControl(method = 'cv', number=10)
+tuneGrid = expand.grid(lambda = grid, alpha=alphaGrid)
+ridgeTrain = train(data = trainClean[, -3],
+                    SalePrice ~ .,
+                    method = 'glmnet',
+                    trControl = trainControl,
+                    tuneGrid = tuneGrid)
+plot(ridgeTrain, xTrans=log)
+varImp(ridgeTrain)
+ridgeTrain$bestTune
+coef(ridgeTrain$finalModel)
+```
+
+```{r}
+library(glmnet)
+grid = 10^seq(0, -3, length = 100)
+x = model.matrix(SalePrice ~ ., trainClean[, -3])[, -1]
+lassoTrain = glmnet(x,
+                      trainClean$SalePrice,
+                      alpha = 1, lambda = grid)
+
+#Visualizing the ridge regression shrinkage.
+plot(lassoTrain, xvar = "lambda", label = TRUE, main = "Ridge Regression")
+```
+### Forward Step LM using AIC
+```{r}
+empty = lm(SalePrice ~ 1, data = trainClean[, -3])
+full = lm(SalePrice ~ ., data = trainClean[, -3])
+scope = list(lower = formula(empty), upper = formula(full))
+forwardAic = step(empty, scope, direction = "both", k = 2)
+backwardAic = step(full, scope, direction = "both", k = 2)
+forwardBIC = step(empty, scope, direction = "both", k = log(nrow(trainClean)))
+backwardBIC = step(empty, scope, direction = "both", k = log(nrow(trainClean)))
+```
+
