@@ -3,7 +3,7 @@ import pandas as pd
 import re
 from scipy.special import boxcox1p
 
-def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_path='p_test.csv', price_opt_path='prices.csv'):
+def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_path='p_test.csv', price_opt_path='actual_price.csv'):
     """
     Takes train and test dataset paths as arguments (./train.csv),
     performs transformations on the features, saves the processed
@@ -11,8 +11,8 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     """
 
     # Load data as dataframes
-    train = pd.read_csv(train_path, index_col = 0)
-    test = pd.read_csv(test_path, index_col = 0)
+    train = pd.read_csv(train_path, index_col = 'Id')
+    test = pd.read_csv(test_path, index_col = 'Id')
 
     # Drop two outliers with very high GrLivArea and low SalePrice
     train = train.drop(train[(train.GrLivArea > 4000) & (train.SalePrice < 300000)].index)
@@ -269,9 +269,13 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     ### Split Dataframe and Save to CSV ###
     #######################################
 
-    # Split dataframe into test and train by train length
+    # Split dataframe into test and train again, split by train length
     final_train = df.iloc[0:len(train),:]
     final_test = df.iloc[len(train):,:]
+
+    # Convert saleprice into dataframe
+    saleprice = pd.DataFrame(saleprice)
+    saleprice.rename(columns={'SalePrice': 'ActualSalePrice'}, inplace=True)
 
     # Save dataframes to csv with file names 'train_opt_path' and 'test_opt_path'
     final_train.to_csv(train_opt_path)
