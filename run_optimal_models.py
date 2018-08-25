@@ -95,7 +95,7 @@ except:
     model_gb = GradientBoostingRegressor()
 
 ##### Split the training set into 5 folds #####
-kf = KFold(n_splits=5)
+kf = KFold(n_splits=5, shuffle = True, random_state = 7)
 
 # keep the indicies of each train and test set in a nested array
 train_indicies = []
