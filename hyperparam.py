@@ -88,7 +88,7 @@ def rf_tune(train, target, n_jobs):
                 'bootstrap': False}
 
     # Make a RandomizedSearchCV object with correct model and specified hyperparams
-    rf_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=5, random_state=42, n_jobs=n_jobs)
+    rf_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=n_jobs)
     start = time.time()
     # Fit models
     rf_random.fit(train, target.values.ravel())
@@ -132,7 +132,7 @@ def gb_tune(train, target, n_jobs):
                 'max_features': max_features}
 
     # Make a RandomizedSearchCV object with correct model and specified hyperparams
-    gb_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=5, random_state=42, n_jobs=n_jobs)
+    gb_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=n_jobs)
     start = time.time()
     # Fit models
     gb_random.fit(train, target.values.ravel())
@@ -166,10 +166,11 @@ def xgb_tune(train, target, n_jobs):
                 'min_child_weight': min_child_weight}
 
     # Make a RandomizedSearchCV object with correct model and specified hyperparams
-    xgb_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=5, random_state=42, n_jobs=-1)
+    xgb_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=n_jobs)
     start = time.time()
     # Fit models
     xgb_random.fit(train, target)
     print('It took {} minutes to run the RandomizedSearchCV'.format(round((int(time.time() - start)/60)), 2))
+    print('Here were the best hyperparameters:\n\n{}'.format(xgb_random.best_params_))
 
     return xgb_random.best_params_
