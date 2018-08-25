@@ -110,7 +110,7 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
 
     # BsmtFinSF1 : Lots of 0s
     best_lambda = .168
-    df.BsmtFinSF1 = boxcox1p(df.BsmtFinSF1, lam)
+    df.BsmtFinSF1 = boxcox1p(df.BsmtFinSF1, best_lambda)
 
     # BsmtUnfSF : Many 0s, MIGHT BE BETTER TO NOT TRANSFORM
     best_lambda = .208
