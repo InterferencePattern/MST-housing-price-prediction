@@ -133,7 +133,8 @@ temp_df.set_index('Id', inplace=True)
 linear_results = linear_results.merge(temp_df, on='Id', how='outer') # add to linear_results DF
 
 # reorder cols (actual at the end)
-linear_results = linear_results[['model1','model2','model3','model4','model5','model6','actual']]
+#linear_results = linear_results[['model1','model2','model3','model4','model5','model6','actual']]
+linear_results['predictions'] = linear_results[['model1','model2','model3','model4','model5','model6']].mean(axis = 1)
 
 # output to a csv
 linear_results.to_csv('linear_results.csv')
@@ -162,7 +163,8 @@ temp_df.set_index('Id', inplace=True)
 rf1_results = rf1_results.merge(temp_df, on='Id', how='outer') # add to rf1_results DF
 
 # # reorder cols (actual at the end)
-rf1_results = rf1_results[['model1','model2','model3','model4','model5','model6','actual']]
+#rf1_results = rf1_results[['model1','model2','model3','model4','model5','model6','actual']]
+rf1_results['predictions'] = rf1_results[['model1','model2','model3','model4','model5','model6']].mean(axis = 1)
 
 # # output to a csv
 rf1_results.to_csv('rf1_results.csv')
@@ -191,7 +193,9 @@ temp_df.set_index('Id', inplace=True)
 rf2_results = rf2_results.merge(temp_df, on='Id', how='outer') # add to rf2_results DF
 
 # # reorder cols (actual at the end)
-rf2_results = rf2_results[['model1','model2','model3','model4','model5','model6','actual']]
+#rf2_results = rf2_results[['model1','model2','model3','model4','model5','model6','actual']]
+rf2_results['predictions'] = rf2_results[['model1','model2','model3','model4','model5','model6']].mean(axis = 1)
+
 
 # # output to a csv
 rf2_results.to_csv('rf2_results.csv')
@@ -220,7 +224,9 @@ temp_df.set_index('Id', inplace=True)
 xgb_results = xgb_results.merge(temp_df, on='Id', how='outer') # add to xgb_results DF
 
 # # reorder cols (actual at the end)
-xgb_results = xgb_results[['model1','model2','model3','model4','model5','model6','actual']]
+#xgb_results = xgb_results[['model1','model2','model3','model4','model5','model6','actual']]
+xgb_results['predictions'] = xgb_results[['model1','model2','model3','model4','model5','model6']].mean(axis = 1)
+
 
 # # output to a csv
 xgb_results.to_csv('xgb_results.csv')
@@ -249,7 +255,9 @@ temp_df.set_index('Id', inplace=True)
 gb_results = gb_results.merge(temp_df, on='Id', how='outer') # add to gb_results DF
 
 # # reorder cols (actual at the end)
-gb_results = gb_results[['model1','model2','model3','model4','model5','model6','actual']]
+#gb_results = gb_results[['model1','model2','model3','model4','model5','model6','actual']]
+gb_results['predictions'] = gb_results[['model1','model2','model3','model4','model5','model6']].mean(axis = 1)
+
 
 # # output to a csv
 gb_results.to_csv('gb_results.csv')
