@@ -5,9 +5,18 @@ from scipy.special import boxcox1p
 
 def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_path='p_test.csv', price_opt_path='actual_price.csv'):
     """
-    Takes train and test dataset paths as arguments (./train.csv),
+    Takes train and test dataset paths as arguments ('train.csv'),
     performs transformations on the features, saves the processed
-    dataframes as new csv files with new names.
+    dataframes as new csv files with new names, saves the target as a
+    separate dataframe.
+
+    Keyword Arguments
+    -----------------
+    train_path -- File path for the train set
+    test_path -- File path for the test set
+    train_opt_path -- File name to save final train set as
+    test_opt_path -- File name to save final test set as
+    price_opt_path -- File name to save target as
     """
 
     # Load data as dataframes
@@ -275,7 +284,6 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
 
     # Convert saleprice into dataframe
     saleprice = pd.DataFrame(saleprice)
-    saleprice.rename(columns={'SalePrice': 'ActualSalePrice'}, inplace=True)
 
     # Save dataframes to csv with file names 'train_opt_path' and 'test_opt_path'
     final_train.to_csv(train_opt_path)
