@@ -67,7 +67,8 @@ test_predictions = all_predictions[all_predictions.index > 1460]
 # Grid search for multiple hyperparameters:
 boostModel = GradientBoostingRegressor()
 grid_param = [{'max_depth': range(1, 4),
-               'n_estimators': range(10, 500, 10)}]
+               'n_estimators': range(10, 500, 10),
+               'learning_rate': np.linspace(.01,.1,10)}]
 boostModel.set_params(random_state=7)
 para_search = GridSearchCV(estimator=boostModel,
                            param_grid=grid_param,
@@ -80,10 +81,8 @@ bestModel = para_search.best_estimator_
 
 # Fit the best model to the test data
 bestModel.fit(train_predictions, actualPrices)
-predictedTest = bestModel.predict(test_predictions)
-predictedTrain = bestModel.predict(train_predictions)
-
-results = pd.Series(predictedTest).apply(np.exp)
+predictedTest = pd.Series(bestModel.predict(test_predictions)).apply(np.exp)
+predictedTrain = pd.Series(bestModel.predict(train_predictions)).apply(np.exp)
 
 ############################
 # Save CSV in Kaggle format
@@ -116,5 +115,5 @@ for model in all_predictions.columns:
     print("Log Score: " + str(rmsle(currentPredictions.apply(np.exp), actualPrices.apply(np.exp))))
 
 print('For metamodel:')
-print("Root Mean Squared Error: $" + str(np.sqrt(mean_squared_error(y_pred=np.exp(predictedTrain), y_true=actualPrices.apply(np.exp)))))
-print("Log Score: " + str(rmsle(np.exp(predictedTrain), actualPrices.apply(np.exp))))
+print("Root Mean Squared Error: $" + str(np.sqrt(mean_squared_error(y_pred=predictedTrain, y_true=actualPrices.apply(np.exp)))))
+print("Log Score: " + str(rmsle(predictedTrain, actualPrices.apply(np.exp))))
