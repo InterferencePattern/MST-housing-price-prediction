@@ -64,28 +64,28 @@ def rf_tune(train, target, n_jobs):
     target -- Target as pandas DataFrame
     n_jobs -- Number of cpu cores to use for computation, use -1 for all
     """
+
     from sklearn.ensemble import RandomForestRegressor
-
+    #
     model = RandomForestRegressor()
-
+    #
     # Number of trees in random forest
     n_estimators = [int(x) for x in np.linspace(start = 100, stop = 2000, num = 10)]
     # Number of features to consider at every split
     max_features = ['auto', 'sqrt']
     # Maximum number of nodes in each tree
-    max_depth = [int(x) for x in np.linspace(10, 50, num = 5)]
+    max_depth = [int(x) for x in np.linspace(10, 50, num = 9)]
     # Minimum number of samples required to split a node
-    min_samples_split = [2, 4, 5, 10]
+    min_samples_split = [2, 3, 4, 8, 10]
     # Minimum number of samples required at each leaf node
-    min_samples_leaf = [1, 2, 4]
+    min_samples_leaf = [1, 2, 3, 4, 5]
 
     # Store in a dictionary
     random_grid = {'n_estimators': n_estimators,
                 'max_features': max_features,
                 'max_depth': max_depth,
                 'min_samples_split': min_samples_split,
-                'min_samples_leaf': min_samples_leaf,
-                'bootstrap': False}
+                'min_samples_leaf': min_samples_leaf}
 
     # Make a RandomizedSearchCV object with correct model and specified hyperparams
     rf_random = RandomizedSearchCV(estimator=model, param_distributions=random_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=n_jobs)
@@ -93,9 +93,14 @@ def rf_tune(train, target, n_jobs):
     # Fit models
     rf_random.fit(train, target.values.ravel())
     print('It took {} minutes to run the RandomizedSearchCV'.format(round((int(time.time() - start)/60)), 2))
+
+    # Add bootstrap = False to the list of best hyperparameters
+    best_params = rf_random.best_params
+    best_params['bootstrap'] = False
+
     print('Here were the best hyperparameters:\n\n{}'.format(rf_random.best_params_))
 
-    return rf_random.best_params_
+    return best_params
 
 
 def gb_tune(train, target, n_jobs):
