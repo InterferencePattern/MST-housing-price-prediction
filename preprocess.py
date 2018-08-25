@@ -34,7 +34,7 @@ def process_data(train_path, test_path, train_opt_path='p_train.csv', test_opt_p
     train.drop("SalePrice", axis=1, inplace=True)
 
     # Combine training and test dataframes
-    df = pd.concat([train, test])
+    df = pd.concat([train, test], sort=False)
 
     # Add '_' to the beginning of feature names if they start with a number
     df.columns = list(map(lambda x: '_' + x if re.match('^\d', x) else x, df.columns))
