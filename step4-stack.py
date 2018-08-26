@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import cross_val_score
 
 def rmsle(y_pred, y_test):
     assert len(y_test) == len(y_pred)
@@ -69,13 +70,13 @@ test_predictions = all_predictions[all_predictions.index > 1460]
 
 # Grid search for multiple hyperparameters:
 boostModel = GradientBoostingRegressor()
-grid_param = [{'max_depth': range(1, 3),
-               'n_estimators': range(10, 500, 100),
+grid_param = [{'max_depth': range(1, 4),
+               'n_estimators': range(10, 1000, 50),
                'learning_rate': np.linspace(.01, .1, 10)}]
 boostModel.set_params(random_state=7)
 para_search = GridSearchCV(estimator=boostModel,
                            param_grid=grid_param,
-                           scoring=None,
+                           scoring='neg_mean_squared_error',
                            cv=10, n_jobs=7,
                            return_train_score=True,
                            verbose=1)
@@ -88,7 +89,6 @@ bestModel.fit(train_predictions, actualPrices)
 metapredictedTest = pd.Series(bestModel.predict(test_predictions)).apply(np.exp)
 metapredictedTrain = pd.Series(bestModel.predict(train_predictions)).apply(np.exp)
 
-print(metapredictedTest)
 ############################
 # Save CSV in Kaggle format
 ############################
@@ -116,7 +116,7 @@ print('Saved all predictions as ' + outputFileName)
 clr = "#3C1E3F"
 sns.set(font_scale=1.25, style="darkgrid")
 plt.style.use('ggplot')
-plt.figure(figsize=(16,16))
+plt.figure(figsize=(16,10))
 sns.set_context('talk')
 
 for model in all_predictions.columns:
@@ -137,12 +137,9 @@ for model in all_predictions.columns:
     plt.clf()
 
 # Print results from the metamodel
-actualPrices = np.exp(np.array(actualPrices))
-print('For metamodel:')
-print("Root Mean Squared Error: $" +
-      str(np.sqrt(mean_squared_error(y_pred = metapredictedTrain, y_true = actualPrices))))
-print("Log Score: " + str(rmsle(y_pred = metapredictedTrain, y_test = actualPrices)))
+print("Metamodel gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(bestModel, train_predictions, actualPrices, cv=5, scoring = 'neg_mean_squared_error')))))
 
+actualPrices = np.exp(np.array(actualPrices))
 grid = sns.scatterplot(x = actualPrices/1000, y = metapredictedTrain/1000, color=clr)
 plt.plot([0, 1000], [0, 1000], linewidth=2)
 plt.title('Stacked Metamodel Performance')

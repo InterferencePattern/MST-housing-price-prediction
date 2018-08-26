@@ -29,6 +29,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import cross_val_score
 
 ##### Load the data #####
 # Training data - has a saleprice column
@@ -129,6 +130,7 @@ pred = [i[0] for i in pred]
 temp_df = pd.DataFrame({'Id':to_guess.index, "model6":pred})
 temp_df.set_index('Id', inplace=True)
 linear_results = linear_results.merge(temp_df, on='Id', how='outer') # add to linear_results DF
+print("Linear gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(model_linear, train, train_prices, cv=5, scoring = 'neg_mean_squared_error')))))
 
 # reorder cols (actual at the end)
 #linear_results = linear_results[['model1','model2','model3','model4','model5','model6','actual']]
@@ -159,6 +161,8 @@ pred = [i for i in pred]
 temp_df = pd.DataFrame({'Id':to_guess.index, "model6":pred})
 temp_df.set_index('Id', inplace=True)
 rf1_results = rf1_results.merge(temp_df, on='Id', how='outer') # add to rf1_results DF
+print("RF1 gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(model_rf1, train, train_prices, cv=5, scoring = 'neg_mean_squared_error')))))
+
 
 # # reorder cols (actual at the end)
 #rf1_results = rf1_results[['model1','model2','model3','model4','model5','model6','actual']]
@@ -189,6 +193,8 @@ pred = [i for i in pred]
 temp_df = pd.DataFrame({'Id':to_guess.index, "model6":pred})
 temp_df.set_index('Id', inplace=True)
 rf2_results = rf2_results.merge(temp_df, on='Id', how='outer') # add to rf2_results DF
+print("RF2 gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(model_rf2, train, train_prices, cv=5, scoring = 'neg_mean_squared_error')))))
+
 
 # # reorder cols (actual at the end)
 #rf2_results = rf2_results[['model1','model2','model3','model4','model5','model6','actual']]
@@ -220,6 +226,7 @@ pred = [i for i in pred]
 temp_df = pd.DataFrame({'Id':to_guess.index, "model6":pred})
 temp_df.set_index('Id', inplace=True)
 xgb_results = xgb_results.merge(temp_df, on='Id', how='outer') # add to xgb_results DF
+print("XGB gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(model_xgb, train, train_prices, cv=5, scoring = 'neg_mean_squared_error')))))
 
 # # reorder cols (actual at the end)
 #xgb_results = xgb_results[['model1','model2','model3','model4','model5','model6','actual']]
@@ -251,6 +258,7 @@ pred = [i for i in pred]
 temp_df = pd.DataFrame({'Id':to_guess.index, "model6":pred})
 temp_df.set_index('Id', inplace=True)
 gb_results = gb_results.merge(temp_df, on='Id', how='outer') # add to gb_results DF
+print("GB gives CV score of " + str(np.sqrt(-np.mean(cross_val_score(model_gb, train, train_prices, cv=5, scoring = 'neg_mean_squared_error')))))
 
 # # reorder cols (actual at the end)
 #gb_results = gb_results[['model1','model2','model3','model4','model5','model6','actual']]
