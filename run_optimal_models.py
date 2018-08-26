@@ -62,7 +62,6 @@ except:
     print('Warning: Running Random Forest 1 with default hyperparameters')
     model_rf1 = RandomForestRegressor()
 
-
 # RF2
 try:
     with open('rf2_params.pkl', 'rb') as f:
@@ -72,7 +71,6 @@ try:
 except:
     print('Warning: Running Random Forest 2 with default hyperparameters')
     model_rf2 = RandomForestRegressor()
-
 
 # XGBoost
 try:
@@ -116,13 +114,13 @@ linear_results.set_index('Id',inplace=True)
 
 # iterate through the 5 folds to create the first 5 models and gen results
 for i in range(0,5):
-    model_linear.fit(train.iloc[train_indicies[i]], train_prices.iloc[train_indicies[i]])  # model on 80%
+    model_linear.fit(train.iloc[train_indicies[i],], train_prices.iloc[train_indicies[i],])  # model on 80%
     pred = model_linear.predict(train.iloc[test_indicies[i]])                              # predict on 20%
     pred = [i[0] for i in pred]
     model_name = "model" + str(i+1)
-    temp_df = pd.DataFrame({'Id':test_indicies[i], model_name:pred})    # temp DF with ID and new model results
+    temp_df = pd.DataFrame({'Id':train.index[test_indicies[i]], model_name:pred})    # temp DF with ID and new model results
     temp_df.set_index('Id', inplace=True)
-    linear_results = linear_results.merge(temp_df, on='Id', how='left') # add to linear_results DF
+    linear_results = linear_results.merge(temp_df, on='Id', how='left', left_index = True) # add to linear_results DF
 
 # create a 6th model - train on all training, predict on all test ('to_guess')
 model_linear.fit(train, train_prices)
@@ -150,7 +148,7 @@ for i in range(0,5):
     pred = model_rf1.predict(train.iloc[test_indicies[i]])                              # predict on 20%
     pred = [i for i in pred]
     model_name = "model" + str(i+1)
-    temp_df = pd.DataFrame({'Id':test_indicies[i], model_name:pred})    # temp DF with ID and new model results
+    temp_df = pd.DataFrame({'Id':train.index[test_indicies[i]], model_name:pred})    # temp DF with ID and new model results
     temp_df.set_index('Id', inplace=True)
     rf1_results = rf1_results.merge(temp_df, on='Id', how='left') # add to rf1_results DF
 
@@ -180,7 +178,7 @@ for i in range(0,5):
     pred = model_rf2.predict(train.iloc[test_indicies[i]])                              # predict on 20%
     pred = [i for i in pred]
     model_name = "model" + str(i+1)
-    temp_df = pd.DataFrame({'Id':test_indicies[i], model_name:pred})    # temp DF with ID and new model results
+    temp_df = pd.DataFrame({'Id':train.index[test_indicies[i]], model_name:pred})    # temp DF with ID and new model results
     temp_df.set_index('Id', inplace=True)
     rf2_results = rf2_results.merge(temp_df, on='Id', how='left') # add to rf2_results DF
 
@@ -211,7 +209,7 @@ for i in range(0,5):
     pred = model_xgb.predict(train.iloc[test_indicies[i]])                              # predict on 20%
     pred = [i for i in pred]
     model_name = "model" + str(i+1)
-    temp_df = pd.DataFrame({'Id':test_indicies[i], model_name:pred})    # temp DF with ID and new model results
+    temp_df = pd.DataFrame({'Id':train.index[test_indicies[i]], model_name:pred})    # temp DF with ID and new model results
     temp_df.set_index('Id', inplace=True)
     xgb_results = xgb_results.merge(temp_df, on='Id', how='left') # add to xgb_results DF
 
@@ -242,7 +240,7 @@ for i in range(0,5):
     pred = model_gb.predict(train.iloc[test_indicies[i]])                              # predict on 20%
     pred = [i for i in pred]
     model_name = "model" + str(i+1)
-    temp_df = pd.DataFrame({'Id':test_indicies[i], model_name:pred})    # temp DF with ID and new model results
+    temp_df = pd.DataFrame({'Id':train.index[test_indicies[i]], model_name:pred})    # temp DF with ID and new model results
     temp_df.set_index('Id', inplace=True)
     gb_results = gb_results.merge(temp_df, on='Id', how='left') # add to gb_results DF
 
