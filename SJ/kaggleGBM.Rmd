@@ -13,7 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 #library(car)
 library(caret)
-#library(gbm)
 ```
 ### Load Data
 ```{r, include=FALSE}
@@ -89,6 +88,7 @@ train$SalePrice = log(train$SalePrice)
 
 ### GBM
 ```{r}
+library(gbm)
 set.seed(0)
 boostTrain = gbm(SalePrice ~ . -Id,
                  data = train,
@@ -370,7 +370,7 @@ trainClean = train %>%
     ExterCond = factor(ExterCond,
                        levels = c("Po", "Fa", "TA", "Gd", "Ex"),
                        ordered = TRUE),
-    Foundation = as.factor(train$Foundation),
+    Foundation = as.factor(Foundation),
     BsmtQual = if_else(is.na(BsmtQual), "nan", BsmtQual) %>%
       factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
              ordered = TRUE),
@@ -446,6 +446,115 @@ trainClean = train %>%
      as.factor(),
    SalePrice = log(SalePrice)
   )
+
+testClean = test %>%
+  transmute(
+    MSSubClass =ifelse(MSSubClass == 150, 20, MSSubClass) %>% 
+      as.factor(),
+    MSZoning = ifelse(is.na(MSZoning), "RL", MSZoning) %>% 
+      as.factor(),
+    LotFrontage = LotFrontage,
+    LotArea = LotArea,
+    LotShape = if_else(LotShape == "Reg", "Reg", "IR") %>%
+      as.factor(),
+    LandContour = as.factor(LandContour),
+    LotConfig = if_else(LotConfig == "FR3", "FR2", LotConfig) %>%
+      as.factor(),
+    Neighborhood = as.factor(Neighborhood),
+    Condition1 = as.factor(Condition1),
+    BldgType = as.factor(BldgType),
+    HouseStyle = as.factor(HouseStyle),
+    OverallQual = OverallQual,
+    OverallCond = ifelse(OverallCond > 5, 5, OverallCond),
+    YearBuilt = YearBuilt,
+    YearBuilt2 = YearBuilt ** 2,
+    RoofStyle = as.factor(RoofStyle),
+    Exterior_1st = ifelse(is.na(Exterior1st), "VinylSd", Exterior1st),
+    Exterior_2nd = ifelse(Exterior1st != Exterior2nd & !is.na(Exterior2nd), "Y", "N") %>%
+      as.factor(),
+    MasVnrType = if_else(is.na(MasVnrType), "None", MasVnrType) %>%
+      as.factor(),
+    MasVnrArea = ifelse(is.na(MasVnrArea), 0, MasVnrArea),
+    ExterQual = factor(ExterQual,
+                       levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                       ordered = TRUE),
+    ExterCond = factor(ExterCond,
+                       levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                       ordered = TRUE),
+    Foundation = as.factor(Foundation),
+    BsmtQual = if_else(is.na(BsmtQual), "nan", BsmtQual) %>%
+      factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+             ordered = TRUE),
+    BsmtCond = if_else(is.na(BsmtCond), "nan", BsmtCond) %>%
+      factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+             ordered = TRUE),
+    BsmtExposure= if_else(is.na(BsmtExposure), "nan", BsmtExposure) %>%
+      factor(levels = c("nan", "No", "Mn", "Av", "Gd"), ordered = TRUE),
+    BsmtFinType1 = if_else(is.na(BsmtFinType1), "nan", BsmtFinType1) %>%
+      factor(levels = c("nan", "Unf", "LwQ", "Rec", "BLQ", "ALQ", "GLQ"),
+             ordered = TRUE),
+   BsmtFinSF_1 = BsmtFinSF1,
+   BsmtUnfSF = BsmtUnfSF,
+   TotalBsmtSF = TotalBsmtSF,
+   HeatingQC = factor(HeatingQC, levels = c("Po", "Fa", "TA", "Gd", "Ex"),
+                      ordered = TRUE),
+   CentralAir = as.factor(CentralAir),
+   Electrical = if_else(Electrical == "SBrkr", "SBrkr",
+                        "other",
+                        missing = "other") %>%
+     as.factor(),
+   FlrSF = `1stFlrSF` + `2ndFlrSF`,
+   Floors = if_else(`2ndFlrSF` > 0, 2, 1),
+   GrLivArea = GrLivArea,
+   BsmtFullBath = if_else(BsmtFullBath > 0 & !is.na(BsmtFullBath), "Y", "N") %>%
+     as.factor(),
+   FullBath = ifelse(FullBath < 2, 1, FullBath),
+   HalfBath = if_else(HalfBath == 0, "N", "Y") %>%
+     as.factor(),
+   BedroomAbvGr = if_else(
+     BedroomAbvGr < 2, 1,
+     ifelse(BedroomAbvGr > 4, 5,
+             BedroomAbvGr)) %>%
+     as.factor(),
+   KitchenAbvGr = ifelse(KitchenAbvGr < 2, 1, 2),
+   KitchenQual = ifelse(is.na(KitchenQual), "TA", KitchenQual) %>% 
+     factor(levels = c("Po", "Fa", "TA", "Gd", "Ex"), ordered = TRUE),
+   TotRmsAbvGrd = TotRmsAbvGrd,
+   Functional = if_else(Functional == "Typ" & !is.na(Functional), "Y", "N") %>% 
+     as.factor(),
+   Fireplaces = ifelse(Fireplaces > 1, 2, Fireplaces),
+   FireplaceQu = if_else(is.na(FireplaceQu), "nan", FireplaceQu) %>%
+     factor(levels = c("nan", "Po", "Fa", "TA", "Gd", "Ex"),
+            ordered = TRUE),
+   GarageType = if_else(is.na(GarageType), "None", GarageType) %>%
+     as.factor(),
+   GarageYrBlt = if_else(is.na(GarageYrBlt), YearBuilt, GarageYrBlt),
+   GarageFinish = if_else(is.na(GarageFinish), "None", GarageFinish) %>%
+     factor(levels = c("None", "Unf", "RFn", "Fin"), ordered = TRUE),
+   GarageCars = ifelse(GarageCars > 2, 3, GarageCars),
+   GarageArea = GarageArea,
+   PavedDrive = factor(PavedDrive,
+                       levels = c("N", "P", "Y"),
+                       ordered = TRUE),
+   WoodDeckSF = WoodDeckSF,
+   OpenPorchSF = OpenPorchSF,
+   EnclosedPorch = EnclosedPorch,
+   ThreeSsnPorch = `3SsnPorch`,
+   ScreenPorch = ScreenPorch,
+   Pool = if_else(PoolArea > 0, "Y", "N") %>%
+     as.factor(),
+   Fence = if_else(is.na(Fence), "None", Fence) %>%
+     factor(levels = c("MnWw", "GdWo", "MnPrv", "GdPrv", "None"),
+            ordered = TRUE),
+   MoSold = as.factor(MoSold),
+   SaleType = if_else(SaleType == "New" & !is.na(SaleType), "New", "other") %>%
+     as.factor(),
+   SaleCondition = if_else(
+     SaleCondition == "Abnorml", "Abnorml",
+     if_else(SaleCondition == "Partial", "Partial",
+             "Normal")) %>% 
+     as.factor()
+  )
 ```
 ### GBM
 ```{r}
@@ -508,5 +617,97 @@ forwardAic = step(empty, scope, direction = "both", k = 2)
 backwardAic = step(full, scope, direction = "both", k = 2)
 forwardBIC = step(empty, scope, direction = "both", k = log(nrow(trainClean)))
 backwardBIC = step(empty, scope, direction = "both", k = log(nrow(trainClean)))
+```
+
+### Everything caret
+```{r}
+library(caretEnsemble)
+library(RANN)
+library(skimr)
+trainProcessed = preProcess(trainClean[, -ncol(trainClean)],
+                            method = c("knnImpute",
+                                       "YeoJohnson",
+                                       "center",
+                                       "scale",
+                                       "corr"),
+                            k = 38)
+trainImputed = predict(trainProcessed, newdata = trainClean)
+trainImputed$SalePrice = trainClean$SalePrice
+
+trainControl <- trainControl(method="cv",
+                             number = 5,
+                             savePredictions = TRUE,
+                             allowParallel = TRUE)
+
+modelGBM = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = "gbm",
+                 trControl = trainControl)
+
+modelKNN = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = "knn",
+                 trControl = trainControl)
+
+modelRF = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = "rf",
+                 trControl = trainControl)
+
+modelXGBTree = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = "xgbTree",
+                 trControl = trainControl)
+
+modelLM = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = 'leapSeq',
+                 trControl = trainControl)
+
+modelSVM = train(data = trainImputed,
+                 SalePrice ~ .,
+                 method = 'svmPoly',
+                 trControl = trainControl)
+
+models_compare <- resamples(list(GBM=modelGBM, RF=modelRF, KNN = modelKNN, xgb=modelXGBTree, LM = modelLM, SVM = modelSVM))
+
+summary(models_compare)
+modelCor(models_compare)
+
+listControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+modelList = caretList(SalePrice ~ .,
+          data = trainImputed,
+          trControl = listControl,
+          methodList = c('leapSeq',
+                         "gbm",
+                         "rf",
+                         "xgbTree"))
+
+modelList %>% resamples() %>% summary()
+modelList %>% resamples() %>% modelCor()
+
+stackControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+stackModel = caretStack(modelList,
+                        method = "xgbDART",
+                        metric = "RMSE",
+                        trControl = stackControl)
+
+testProcess = predict(trainProcessed, newdata = testClean)
+prediction = predict(stackModel, newdata = testProcess)
+
+submission = data_frame(Id = 1461:(length(prediction)+1460),
+                        SalePrice = prediction %>% exp() %>% round(digits = -2))
+
+
 ```
 
