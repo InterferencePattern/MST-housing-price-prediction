@@ -19,7 +19,7 @@ from sklearn.metrics import mean_squared_error
 
 def rmsle(y_pred, y_test) :
     assert len(y_test) == len(y_pred)
-    return np.sqrt(np.mean((np.log1p(y_pred) - np.log1p(y_test))**2))
+    return np.sqrt(np.mean((np.log(y_pred) - np.log(y_test))**2))
 
 # The model-building script will produce a CSV containing:
 #
@@ -67,8 +67,8 @@ test_predictions = all_predictions[all_predictions.index > 1460]
 # Grid search for multiple hyperparameters:
 boostModel = GradientBoostingRegressor()
 grid_param = [{'max_depth': range(1, 4),
-               'n_estimators': range(10, 500, 10),
-               'learning_rate': np.linspace(.01,.1,10)}]
+               'n_estimators': range(10, 500, 100),
+               'learning_rate': np.linspace(.01,.1,2)}]
 boostModel.set_params(random_state=7)
 para_search = GridSearchCV(estimator=boostModel,
                            param_grid=grid_param,
@@ -116,4 +116,4 @@ for model in all_predictions.columns:
 
 print('For metamodel:')
 print("Root Mean Squared Error: $" + str(np.sqrt(mean_squared_error(y_pred=predictedTrain, y_true=actualPrices.apply(np.exp)))))
-print("Log Score: " + str(rmsle(predictedTrain, actualPrices.apply(np.exp))))
+print("Log Score: " + str(rmsle(y_pred = predictedTrain, y_test = actualPrices.apply(np.exp))))
