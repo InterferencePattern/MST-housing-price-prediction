@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 import pandas as pd
 import numpy as np
