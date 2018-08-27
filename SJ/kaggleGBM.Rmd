@@ -233,7 +233,10 @@ aov(SalePrice ~ Fence, train) %>%
 ```
 MiscFeature
 ```{r}
-summary(train$MiscFeature)
+train$MiscFeature %>% as.factor() %>% summary()
+x = ifelse(is.na(train$MiscFeature), "None", train$MiscFeature) %>% 
+  as.factor()
+boxplot(train$SalePrice ~ x)
 ```
 MoSold
 ```{r}
@@ -585,7 +588,7 @@ lambdaGrid = 10^seq(0, -4, length = 100)
 alphaGrid = seq(0, 1, 100)
 set.seed(0)
 trainControl = trainControl(method = 'cv', number=10)
-tuneGrid = expand.grid(lambda = grid, alpha=alphaGrid)
+tuneGrid = expand.grid(lambda = lambdaGrid, alpha=alphaGrid)
 ridgeTrain = train(data = trainClean[, -3],
                     SalePrice ~ .,
                     method = 'glmnet',
@@ -595,6 +598,7 @@ plot(ridgeTrain, xTrans=log)
 varImp(ridgeTrain)
 ridgeTrain$bestTune
 coef(ridgeTrain$finalModel)
+plot(ridgeTrain$finalModel, xvar = "lambda", label = TRUE, main = "Lasso Regression")
 ```
 
 ```{r}
@@ -709,5 +713,187 @@ submission = data_frame(Id = 1461:(length(prediction)+1460),
                         SalePrice = prediction %>% exp() %>% round(digits = -2))
 
 
+```
+### try PCA
+```{r}
+trainProcessed0 = preProcess(trainClean[, -ncol(trainClean)],
+                            method = c("knnImpute",
+                                       "YeoJohnson",
+                                       "center",
+                                       "scale",
+                                       "corr",
+                                       "pca"),
+                            k = 38)
+trainImputed0 = predict(trainProcessed0, newdata = trainClean)
+trainImputed0$SalePrice = trainClean$SalePrice
+
+trainControl <- trainControl(method="cv",
+                             number = 5,
+                             savePredictions = TRUE,
+                             allowParallel = TRUE)
+
+modelGBM0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = "gbm",
+                 trControl = trainControl)
+
+modelKNN0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = "kknn",
+                 trControl = trainControl)
+
+modelRF0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = "parRF",
+                 trControl = trainControl)
+
+modelXGBTree0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = "xgbTree",
+                 trControl = trainControl)
+
+modelXGBDART0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = "xgbDART",
+                 trControl = trainControl)
+
+modelGLM0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = 'glmnet',
+                 trControl = trainControl)
+
+modelLM0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = 'leapSeq',
+                 trControl = trainControl)
+
+modelSVM0 = train(data = trainImputed0,
+                 SalePrice ~ .,
+                 method = 'svmLinear',
+                 trControl = trainControl)
+
+models_compare <- resamples(list(GBM=modelGBM0,
+                                 RF=modelRF0,
+                                 KNN = modelKNN0,
+                                 xgbT = modelXGBTree0,
+                                 xgbD = modelXGBDART0,
+                                 GML = modelGLM0,
+                                 LM = modelLM0,
+                                 SVM = modelSVM0))
+
+summary(models_compare)
+modelCor(models_compare)
+
+listControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+modelList0 = caretList(SalePrice ~ .,
+          data = trainImputed0,
+          trControl = listControl,
+          methodList = c('svmLinear',
+                         "gbm",
+                         "rf",
+                         "xgbTree",
+                         "glmnet"))
+
+modelList0 %>% resamples() %>% summary()
+modelList0 %>% resamples() %>% modelCor()
+
+stackControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+stackModel0 = caretStack(modelList0,
+                        method = "xgbDART",
+                        metric = "RMSE",
+                        trControl = stackControl)
+
+stackModel0$error$RMSE %>% min()
+
+testProcess0 = predict(trainProcessed0, newdata = testClean)
+prediction0 = predict(stackModel0, newdata = testProcess0)
+
+submission0 = data_frame(Id = 1461:(length(prediction0)+1460),
+                        SalePrice = prediction0 %>% exp() %>% round(digits = -2))
+```
+### Include Team preprocess
+```{r}
+library(tidyverse)
+library(caret)
+library(caretEnsemble)
+pTrain = read_csv("p_train.csv")
+test = read_csv("p_test.csv")
+actualPrice = read_csv("actual_price.csv")
+
+listControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+modelList1 = caretList(x = train[,-1],
+                       y = actualPrice$log_SalePrice,
+                       trControl = listControl,
+                       methodList = c('svmLinear',
+                         "gbm",
+                         "rf",
+                         "xgbTree",
+                         "glmnet"))
+
+modelList1 %>% resamples() %>% summary()
+modelList1 %>% resamples() %>% modelCor()
+
+stackControl = trainControl(method="repeatedcv",
+                           number=10,
+                           repeats=3,
+                           savePredictions=TRUE,
+                           allowParallel = TRUE)
+set.seed(4)
+stackModel1 = caretStack(modelList1,
+                        method = "xgbDART",
+                        metric = "RMSE",
+                        trControl = stackControl)
+
+stackModel1$error$RMSE %>% min()
+
+prediction = predict(stackModel1, newdata = test[, -1])
+trainPrediction = predict(stackModel1, newdata = pTrain[, -1])
+
+trainPrediction = data.frame( Id = pTrain$Id,
+                              SalePrice = trainPrediction %>% exp() %>% round(digits = -2))
+
+submission1 = data_frame(Id = 1461:(length(prediction)+1460),
+                        SalePrice = prediction %>% exp() %>% round(digits = -2))
+```
+### Final Variable Importance
+```{r}
+modelList1$gbm %>% summary()
+```
+```{r}
+modelList1$xgbTree %>% varImp()
+```
+
+```{r}
+modelList1$glmnet %>% varImp()
+modelList1$glmnet %>% coef() %>% summary()
+```
+
+```{r}
+modelRF = train(x = pTrain[, -1],
+                y = actualPrice$log_SalePrice,
+                 method = "rf",
+                 trControl = trainControl,
+                importance = TRUE)
+
+modelRF %>% varImp()
+```
+
+```{r}
+plot(modelList1$glmnet$finalModel, xvar = "lambda", label = TRUE, main = "Lasso Regression")
 ```
 
